@@ -15,7 +15,7 @@ OpenALDataFetcher::~OpenALDataFetcher() {
     }
 }
 
-void OpenALDataFetcher::SetInternalBufferSize(size_t size) {
+void OpenALDataFetcher::SetInternalBufferSize(const size_t size) {
     if (internal_buffer)
         delete internal_buffer;
 
@@ -24,7 +24,7 @@ void OpenALDataFetcher::SetInternalBufferSize(size_t size) {
     UseDevice(device_id);
 }
 
-bool OpenALDataFetcher::GetData(float buffer[], size_t length) {
+bool OpenALDataFetcher::GetData(float buffer[], const size_t length) {
     if (!device)
         return false;
     if (length > internal_buffer_size) 
@@ -44,7 +44,7 @@ bool OpenALDataFetcher::GetData(float buffer[], size_t length) {
     return true;
 }
 
-bool OpenALDataFetcher::UseDevice(size_t device_id) {
+bool OpenALDataFetcher::UseDevice(const size_t device_id) {
     if (device_id >= device_names.size())
         return false;
 
