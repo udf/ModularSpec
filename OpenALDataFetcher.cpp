@@ -51,7 +51,7 @@ bool OpenALDataFetcher::UseDevice(const size_t device_id) {
     if (device)
         alcCaptureCloseDevice(device);
 
-    device = alcCaptureOpenDevice(device_names[device_id].c_str(), 10000, AL_FORMAT_MONO8, internal_buffer_size);
+    device = alcCaptureOpenDevice(device_names[device_id].c_str(), 44100, AL_FORMAT_MONO8, internal_buffer_size*2);
     if (!device)
         return false;
     alcCaptureStart(device);
