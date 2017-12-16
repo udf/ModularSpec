@@ -15,7 +15,7 @@ public:
     
     void SetInternalBufferSize(const size_t size);
     bool GetData(float buffer[], const size_t length);
-    bool UseDevice(const size_t device_id);
+    bool UseDevice(const size_t device_id, const size_t sample_rate);
     void PrintDeviceList();
     const std::vector<std::string>& GetDeviceList();
     void BuildDeviceList();

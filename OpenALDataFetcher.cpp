@@ -21,7 +21,6 @@ void OpenALDataFetcher::SetInternalBufferSize(const size_t size) {
 
     internal_buffer_size = size;
     internal_buffer = new unsigned char[internal_buffer_size];
-    UseDevice(device_id);
 }
 
 bool OpenALDataFetcher::GetData(float buffer[], const size_t length) {
@@ -44,14 +43,14 @@ bool OpenALDataFetcher::GetData(float buffer[], const size_t length) {
     return true;
 }
 
-bool OpenALDataFetcher::UseDevice(const size_t device_id) {
+bool OpenALDataFetcher::UseDevice(const size_t device_id, const size_t sample_rate) {
     if (device_id >= device_names.size())
         return false;
 
     if (device)
         alcCaptureCloseDevice(device);
 
-    device = alcCaptureOpenDevice(device_names[device_id].c_str(), 44100, AL_FORMAT_MONO8, internal_buffer_size*2);
+    device = alcCaptureOpenDevice(device_names[device_id].c_str(), sample_rate, AL_FORMAT_MONO8, internal_buffer_size*2);
     if (!device)
         return false;
     alcCaptureStart(device);
