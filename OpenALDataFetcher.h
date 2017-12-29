@@ -3,27 +3,36 @@
 #include <iostream>
 #include <unistd.h>
 #include <stddef.h>
+#include <functional>
+#include <memory>
+#include <stdexcept>
 
 #include <AL/al.h>
 #include <AL/alc.h>
 
-class OpenALDataFetcher
-{
+#include "util.h"
+
+class OpenALDataFetcher {
 public:
-    OpenALDataFetcher();
+    OpenALDataFetcher(
+        const ALCuint sample_rate,
+        const ALCsizei buffer_size,
+        const std::function<size_t(const std::vector<std::string>&)> device_matcher
+    );
     ~OpenALDataFetcher();
-    
-    void SetInternalBufferSize(const size_t size);
-    bool GetData(float buffer[], const size_t length);
-    bool UseDevice(const size_t device_id, const size_t sample_rate);
-    void PrintDeviceList();
-    const std::vector<std::string>& GetDeviceList();
-    void BuildDeviceList();
+
+    ALCint UpdateData();
+    void GetData(float buffer[]);
+    void ReloadDevice();
 
 private:
-    std::vector<std::string> device_names;
+    void BuildDeviceList();
+
+    ALCuint sample_rate;
+    ALCsizei internal_buffer_size;
+    std::function<size_t(const std::vector<std::string> &device_list)> device_matcher;
+
     ALCdevice *device = NULL;
-    size_t device_id;
-    size_t internal_buffer_size = 2048;
-    unsigned char *internal_buffer = NULL;
+    std::unique_ptr<short[]> internal_buffer;
+    std::vector<std::string> device_list;
 };

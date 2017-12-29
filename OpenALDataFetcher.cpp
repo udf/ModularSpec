@@ -1,80 +1,90 @@
 #include "OpenALDataFetcher.h"
 
-OpenALDataFetcher::OpenALDataFetcher() {
-    BuildDeviceList();
-    device_id = 0;
-    SetInternalBufferSize(internal_buffer_size);
+OpenALDataFetcher::OpenALDataFetcher(
+    const ALCuint sample_rate,
+    const ALCsizei buffer_size,
+    const std::function<size_t(const std::vector<std::string>&)> device_matcher
+) {
+    internal_buffer = std::make_unique<short[]>(buffer_size);
+    internal_buffer_size = buffer_size;
+    this->sample_rate = sample_rate;
+    this->device_matcher = device_matcher;
+
+    ReloadDevice();
 }
 
 OpenALDataFetcher::~OpenALDataFetcher() {
-    if (device) {
+    if (device)
         alcCaptureCloseDevice(device);
-    }
-    if (internal_buffer) {
-        delete internal_buffer;
-    }
 }
 
-void OpenALDataFetcher::SetInternalBufferSize(const size_t size) {
-    if (internal_buffer)
-        delete internal_buffer;
-
-    internal_buffer_size = size;
-    internal_buffer = new unsigned char[internal_buffer_size];
-}
-
-bool OpenALDataFetcher::GetData(float buffer[], const size_t length) {
-    if (!device)
-        return false;
-    if (length > internal_buffer_size) 
-        SetInternalBufferSize(length);
-
-    // block until there is enough data
-    ALCint available_samples;
-    do {
-        alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, 1, &available_samples);
-        usleep(1000);
-    } while (available_samples < length);
-
-    alcCaptureSamples(device, (ALCvoid*)internal_buffer, length);
-    for (size_t i = 0; i < length; ++i) {
-        buffer[i] = (internal_buffer[i] - 128) / 128.0f;
-    }
-    return true;
-}
-
-bool OpenALDataFetcher::UseDevice(const size_t device_id, const size_t sample_rate) {
-    if (device_id >= device_names.size())
-        return false;
-
+void OpenALDataFetcher::ReloadDevice() {
     if (device)
         alcCaptureCloseDevice(device);
 
-    device = alcCaptureOpenDevice(device_names[device_id].c_str(), sample_rate, AL_FORMAT_MONO8, internal_buffer_size*2);
-    if (!device)
-        return false;
-    alcCaptureStart(device);
-    this->device_id = device_id;
+    // refresh the device list
+    BuildDeviceList();
+    if (device_list.size() == 0)
+        throw std::runtime_error("Could not find any capture devices");
 
-    return true;
-}
-
-void OpenALDataFetcher::PrintDeviceList() {
-    for (size_t i = 0; i < device_names.size(); i++) {
-        std::cout << "[" << i << "] " << device_names[i] << std::endl;
+    // call the matcher and check its output
+    size_t device_id = device_matcher(device_list);
+    if (device_id >= device_list.size()) {
+        std::cerr << "matcher chose out of bounds device_id (" << device_id << ")";
+        std::cerr << " defaulting to 0 (" << device_list[0] << ")" << std::endl;
+        device_id = 0;
     }
-}
 
-const std::vector<std::string>& OpenALDataFetcher::GetDeviceList() {
-    return device_names;
+    // try to open the device chosen by the matcher
+    device = alcCaptureOpenDevice(
+        device_list[device_id].c_str(),
+        sample_rate,
+        AL_FORMAT_MONO16,
+        internal_buffer_size
+    );
+    if (device == NULL)
+        throw std::runtime_error("Could not open device");
+
+    // try to start capturing from the device
+    alcCaptureStart(device);
+    if(alcGetError(device) != ALC_NO_ERROR)
+        throw std::runtime_error("Could not start capture");
 }
 
 void OpenALDataFetcher::BuildDeviceList() {
-    device_names.clear();
+    device_list.clear();
     const ALCchar* devices = alcGetString(NULL, ALC_CAPTURE_DEVICE_SPECIFIER);
+    if (*devices == '\0')
+        return;
 
     do {
-        device_names.push_back(std::string(devices));
-        devices += device_names.back().size() + 1;
+        device_list.push_back(std::string(devices));
+        devices += device_list.back().size() + 1;
     } while (*devices != '\0');
+}
+
+ALCint OpenALDataFetcher::UpdateData() {
+    ALCint available_samples;
+    alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, 1, &available_samples);
+
+    ALCsizei readable_samples = std::min(available_samples, internal_buffer_size);
+    if (available_samples > 0) {
+        for (ALCsizei i = readable_samples; i < internal_buffer_size; ++i) {
+            internal_buffer[i - readable_samples] = internal_buffer[i];
+        }
+
+        alcCaptureSamples(
+            device,
+            (ALCvoid*)(internal_buffer.get() + internal_buffer_size - readable_samples),
+            readable_samples
+        );
+    }
+
+    return readable_samples;
+}
+
+void OpenALDataFetcher::GetData(float buffer[]) {
+    for (ALCsizei i = 0; i < internal_buffer_size; i++) {
+        buffer[i] = map(internal_buffer[i], -32768, 32767, -1, 1);
+    }
 }
