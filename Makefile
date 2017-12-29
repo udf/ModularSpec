@@ -6,4 +6,4 @@ all:
 	$(CXX) $(CXXFLAGS) -lncurses $(SRCS) -o example
 
 clean:
-	rm $(BINS)
+	rm example
