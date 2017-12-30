@@ -55,8 +55,6 @@ void Spectrum::Update(const float data[]) {
 
     // convert data from output to usable data
     for (size_t i = 0; i < bar_data_size; i++) {
-        bar_data[i] = bar_data[i] * (1 - average_weight);
-
         // Compute log magnitude from real and imaginary components of FFT 
         // 0.5 * log(x) == log(sqrt(x))
         float mag = 0.5f * log10(fft_out[i][0]*fft_out[i][0] + fft_out[i][1]*fft_out[i][1]);
@@ -64,7 +62,8 @@ void Spectrum::Update(const float data[]) {
         // Clip magnitude to [0, 1]
         mag = std::clamp(mag, 0.0f, 1.0f);
 
-        bar_data[i] += mag * average_weight;
+        // Use weighted average to smooth the data
+        bar_data[i] = bar_data[i] * (1 - average_weight) + mag * average_weight;
     }
 }
 
