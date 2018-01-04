@@ -14,9 +14,16 @@ class Spectrum {
 public:
     Spectrum(const size_t size);
     ~Spectrum();
+
+    // input windowing
     void UseHanningWindow();
     void UseHammingWindow();
     void UseBlackmanWindow();
+
+    // output windowing (normalisation)
+    void UseFlatNormalisation();
+    void UseLinearNormalisation(float start, float end);
+
     void Update(const float data[]);
     float BarDataAt(float i) const;
     void GetData(
@@ -30,7 +37,8 @@ public:
     // configurables
     float scale = 1;
     float average_weight = 0.6;
-    std::unique_ptr<float[]> window;
+    std::unique_ptr<float[]> wave_window;
+    std::unique_ptr<float[]> normalisation_window;
 
     // output
     std::unique_ptr<float[]> bar_data;

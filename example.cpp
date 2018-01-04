@@ -45,6 +45,7 @@ int main() {
     );
 
     Spectrum spec(FFT_SIZE);
+    spec.UseLinearNormalisation(1, 20);
     float bar_data[BARS];
 
     initscr();

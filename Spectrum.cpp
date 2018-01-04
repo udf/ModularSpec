@@ -5,7 +5,9 @@ Spectrum::Spectrum(const size_t size) {
     bar_data_size = size/2;
 
     bar_data = std::make_unique<float[]>(bar_data_size);
-    window = std::make_unique<float[]>(size);
+    wave_window = std::make_unique<float[]>(size);
+    normalisation_window = std::make_unique<float[]>(bar_data_size);
+    UseFlatNormalisation();
     UseHanningWindow();
 
     fft_in = std::make_unique<double[]>(size);
@@ -18,12 +20,13 @@ Spectrum::~Spectrum() {
     fftw_free(fft_out);
 }
 
+
 void Spectrum::UseHanningWindow() {
     double delta = 2 * M_PI / (double)size;
 
     for (size_t i = 0; i < size; i++) {
         double phase = i * delta;
-        window[i] = (float)(0.5 * (1.0 - cos(phase)));
+        wave_window[i] = (float)(0.5 * (1.0 - cos(phase)));
     }
 }
 
@@ -32,7 +35,7 @@ void Spectrum::UseHammingWindow() {
 
     for (size_t i = 0; i < size; i++) {
         double phase = i * delta;
-        window[i] = (float)(0.54 - .46*cos(phase));
+        wave_window[i] = (float)(0.54 - .46*cos(phase));
     }
 }
 
@@ -41,23 +44,38 @@ void Spectrum::UseBlackmanWindow() {
 
     for (size_t i = 0; i < size; i++) {
         double phase = i * delta;
-        window[i] = (float)(0.42 - .5*cos(phase) + .08*cos(2 * phase));
+        wave_window[i] = (float)(0.42 - .5*cos(phase) + .08*cos(2 * phase));
+    }
+}
+
+void Spectrum::UseFlatNormalisation() {
+    for (size_t i = 0; i < bar_data_size; i++) {
+        normalisation_window[i] = 1;
+    }
+}
+
+void Spectrum::UseLinearNormalisation(float start, float end) {
+    for (size_t i = 0; i < bar_data_size; i++) {
+        normalisation_window[i] = map(i, 0, bar_data_size - 1, start, end);
     }
 }
 
 void Spectrum::Update(const float data[]) {
     // apply window and scale to data and copy into input array
     for (size_t i = 0; i < size; i++) {
-        fft_in[i] = data[i] * window[i] * scale;
+        fft_in[i] = data[i] * wave_window[i] * scale;
     }
 
     fftw_execute(plan);
 
     // convert data from output to usable data
     for (size_t i = 0; i < bar_data_size; i++) {
-        // Compute log magnitude from real and imaginary components of FFT 
+        // Compute magnitude squared from real and imaginary components of FFT
+        float mag = fft_out[i][0]*fft_out[i][0] + fft_out[i][1]*fft_out[i][1];
+
+        // Normalise and compute log magnitude
         // 0.5 * log(x) == log(sqrt(x))
-        float mag = 0.5f * log10(fft_out[i][0]*fft_out[i][0] + fft_out[i][1]*fft_out[i][1]);
+        mag = 0.5f * log10(mag * normalisation_window[i]);
 
         // Clip magnitude to [0, 1]
         mag = std::clamp(mag, 0.0f, 1.0f);
