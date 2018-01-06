@@ -25,12 +25,26 @@ void draw_bars(float data[], uint start_x, uint start_y, uint height, size_t wid
     }
 }
 
+void start_curses() {
+    initscr();
+    cbreak();
+    noecho();
+    nodelay(stdscr, TRUE);
+    curs_set(0);
+}
+
+void stop_curses() {
+    endwin();
+}
+
 int main() {
     float audio_data[FFT_SIZE];
     OpenALDataFetcher audio_fetcher(
         SAMPLE_RATE,
         FFT_SIZE,
         [](const std::vector<std::string> &list) {
+            stop_curses();
+
             for (size_t i = 0; i < list.size(); ++i) {
                 std::cout << i << ": " << list[i] << std::endl;
             }
@@ -38,8 +52,9 @@ int main() {
             size_t device_id = 0;
             std::cout << "Enter a device number to use: ";
             std::cin >> device_id;
-            std::cout << "Using device #" << device_id << std::endl;
+            std::cout << "Using device #" << device_id << std::endl << std::endl;
 
+            start_curses();
             return device_id;
         }
     );
@@ -47,12 +62,6 @@ int main() {
     Spectrum spec(FFT_SIZE);
     spec.UseLinearNormalisation(1, 20);
     float bar_data[BARS];
-
-    initscr();
-    cbreak();
-    noecho();
-    nodelay(stdscr, TRUE);
-    curs_set(0);
 
     while (true) {
         int ch = getch();
@@ -70,6 +79,7 @@ int main() {
         mssleep(20);
     }
 
-    endwin();
+    stop_curses();
+    std::cout << "stop" << std::endl;
     return 0;
 }

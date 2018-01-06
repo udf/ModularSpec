@@ -3,7 +3,7 @@
 OpenALDataFetcher::OpenALDataFetcher(
     const ALCuint sample_rate,
     const ALCsizei buffer_size,
-    const std::function<size_t(const std::vector<std::string>&)> device_matcher
+    const std::function<size_t(const std::vector<std::string>&)> &device_matcher
 ) {
     internal_buffer = std::make_unique<short[]>(buffer_size);
     internal_buffer_size = buffer_size;
@@ -30,8 +30,6 @@ void OpenALDataFetcher::ReloadDevice() {
     // call the matcher and check its output
     size_t device_id = device_matcher(device_list);
     if (device_id >= device_list.size()) {
-        std::cerr << "matcher chose out of bounds device_id (" << device_id << ")";
-        std::cerr << " defaulting to 0 (" << device_list[0] << ")" << std::endl;
         device_id = 0;
     }
 
@@ -78,6 +76,10 @@ ALCint OpenALDataFetcher::UpdateData() {
             (ALCvoid*)(internal_buffer.get() + internal_buffer_size - readable_samples),
             readable_samples
         );
+
+        last_capture = clock();
+    } else if ((clock() - last_capture) / (double)CLOCKS_PER_SEC >= device_timeout) {
+        ReloadDevice();
     }
 
     return readable_samples;

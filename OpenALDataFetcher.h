@@ -1,11 +1,11 @@
 #include <vector>
 #include <string>
-#include <iostream>
 #include <unistd.h>
 #include <stddef.h>
 #include <functional>
 #include <memory>
 #include <stdexcept>
+#include <ctime>
 
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -15,9 +15,9 @@
 class OpenALDataFetcher {
 public:
     OpenALDataFetcher(
-        const ALCuint sample_rate,
-        const ALCsizei buffer_size,
-        const std::function<size_t(const std::vector<std::string>&)> device_matcher
+        ALCuint sample_rate,
+        ALCsizei buffer_size,
+        const std::function<size_t(const std::vector<std::string>&)> &device_matcher
     );
     ~OpenALDataFetcher();
 
@@ -25,8 +25,12 @@ public:
     void GetData(float buffer[]);
     void ReloadDevice();
 
+    double device_timeout = 0.1;
+
 private:
     void BuildDeviceList();
+
+    clock_t last_capture;
 
     ALCuint sample_rate;
     ALCsizei internal_buffer_size;
