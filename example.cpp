@@ -3,14 +3,14 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <chrono>
+#include <thread>
 
 #include <ncurses.h>
 
 #include "OpenALDataFetcher.h"
 #include "Spectrum.h"
 
-#define mssleep(ms) usleep(ms * 1000)
 #define FFT_SIZE 4096
 #define SAMPLE_RATE 44100
 #define BARS 50
@@ -76,7 +76,7 @@ int main() {
         draw_bars(bar_data, 0, 0, 30, BARS);
         refresh();
 
-        mssleep(20);
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
 
     stop_curses();
