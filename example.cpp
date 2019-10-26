@@ -17,7 +17,7 @@
 
 void draw_bars(float data[], uint start_x, uint start_y, uint height, size_t width) {
     for (size_t x = 0; x < width; x++) {
-        size_t bar_height = round(data[x]*height);
+        size_t bar_height = round(pow(data[x], 0.2f) * height);
 
         for (size_t y = 0; y < height; y++) {
             mvaddch(height - y + start_y, x + start_x, y <= bar_height ? '|' : ' ');
