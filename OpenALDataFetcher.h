@@ -5,7 +5,7 @@
 #include <functional>
 #include <memory>
 #include <stdexcept>
-#include <ctime>
+#include <chrono>
 
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -30,7 +30,7 @@ public:
 private:
     void BuildDeviceList();
 
-    clock_t last_capture;
+    using clock = std::chrono::steady_clock;
 
     ALCuint sample_rate;
     ALCsizei internal_buffer_size;

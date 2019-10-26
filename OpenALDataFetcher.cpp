@@ -62,25 +62,34 @@ void OpenALDataFetcher::BuildDeviceList() {
 }
 
 ALCint OpenALDataFetcher::UpdateData() {
+    static clock::time_point last_capture;
+
     ALCint available_samples;
     alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, 1, &available_samples);
 
     ALCsizei readable_samples = std::min(available_samples, internal_buffer_size);
-    if (available_samples > 0) {
-        for (ALCsizei i = readable_samples; i < internal_buffer_size; ++i) {
-            internal_buffer[i - readable_samples] = internal_buffer[i];
+
+    // Check for timeout if no samples are available and we've captured before
+    if (available_samples <= 0 && last_capture.time_since_epoch().count() > 0) {
+        std::chrono::duration<double> duration = clock::now() - last_capture;
+        // Reload device if we timed out
+        if (duration.count() > device_timeout) {
+            ReloadDevice();
+            return 0;
         }
-
-        alcCaptureSamples(
-            device,
-            (ALCvoid*)(internal_buffer.get() + internal_buffer_size - readable_samples),
-            readable_samples
-        );
-
-        last_capture = clock();
-    } else if ((clock() - last_capture) / (double)CLOCKS_PER_SEC >= device_timeout) {
-        ReloadDevice();
     }
+
+    for (ALCsizei i = readable_samples; i < internal_buffer_size; ++i) {
+        internal_buffer[i - readable_samples] = internal_buffer[i];
+    }
+
+    alcCaptureSamples(
+        device,
+        (ALCvoid*)(internal_buffer.get() + internal_buffer_size - readable_samples),
+        readable_samples
+    );
+
+    last_capture = clock::now();
 
     return readable_samples;
 }
