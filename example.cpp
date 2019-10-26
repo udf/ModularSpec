@@ -11,9 +11,9 @@
 #include "OpenALDataFetcher.h"
 #include "Spectrum.h"
 
-#define FFT_SIZE 4096
-#define SAMPLE_RATE 44100
-#define BARS 50
+const size_t fft_size = 4096;
+const size_t sample_rate = 44100;
+const size_t num_bars = 50;
 
 void draw_bars(float data[], uint start_x, uint start_y, uint height, size_t width) {
     for (size_t x = 0; x < width; x++) {
@@ -38,10 +38,10 @@ void stop_curses() {
 }
 
 int main() {
-    float audio_data[FFT_SIZE];
+    float audio_data[fft_size];
     OpenALDataFetcher audio_fetcher(
-        SAMPLE_RATE,
-        FFT_SIZE,
+        sample_rate,
+        fft_size,
         [](const std::vector<std::string> &list) {
             stop_curses();
 
@@ -59,9 +59,9 @@ int main() {
         }
     );
 
-    Spectrum spec(FFT_SIZE);
+    Spectrum spec(fft_size);
     spec.UseLinearNormalisation(1, 20);
-    float bar_data[BARS];
+    float bar_data[num_bars];
 
     while (true) {
         int ch = getch();
@@ -71,9 +71,9 @@ int main() {
         audio_fetcher.UpdateData();
         audio_fetcher.GetData(audio_data);
         spec.Update(audio_data);
-        spec.GetData(20, 5000, SAMPLE_RATE, bar_data, BARS);
+        spec.GetData(20, 5000, sample_rate, bar_data, num_bars);
 
-        draw_bars(bar_data, 0, 0, 30, BARS);
+        draw_bars(bar_data, 0, 0, 30, num_bars);
         refresh();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
