@@ -1,7 +1,6 @@
 #include <vector>
 #include <string>
-#include <unistd.h>
-#include <stddef.h>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <stdexcept>

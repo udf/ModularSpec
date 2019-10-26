@@ -90,7 +90,7 @@ float Spectrum::BarDataAt(float i) const {
         return 0;
 
     float intpart;
-    float weight = modf(i, &intpart);
+    float weight = modff(i, &intpart);
 
     size_t start = intpart;
     size_t end = std::min(start + 1, bar_data_size - 1);

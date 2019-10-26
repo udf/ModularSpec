@@ -1,7 +1,5 @@
-#define _USE_MATH_DEFINES
-
-#include <stddef.h>
-#include <math.h>
+#include <cstddef>
+#include <cmath>
 #include <iostream>
 #include <algorithm>
 #include <memory>
