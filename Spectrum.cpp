@@ -73,9 +73,8 @@ void Spectrum::Update(const float data[]) {
         // Compute magnitude squared from real and imaginary components of FFT
         float mag = fft_out[i][0]*fft_out[i][0] + fft_out[i][1]*fft_out[i][1];
 
-        // Normalise and compute log magnitude
-        // 0.5 * log(x) == log(sqrt(x))
-        mag = 0.5f * log10(mag * normalisation_window[i]);
+        // Normalise
+        mag = mag * normalisation_window[i];
 
         // Clip magnitude to [0, 1]
         mag = std::clamp(mag, 0.0f, 1.0f);

@@ -16,7 +16,7 @@ const size_t num_bars = 50;
 
 void draw_bars(float data[], uint start_x, uint start_y, uint height, size_t width) {
     for (size_t x = 0; x < width; x++) {
-        size_t bar_height = round(pow(data[x], 0.2f) * height);
+        size_t bar_height = round(pow(data[x], 2.f) * height);
 
         for (size_t y = 0; y < height; y++) {
             mvaddch(height - y + start_y, x + start_x, y <= bar_height ? '|' : ' ');
@@ -59,7 +59,7 @@ int main() {
     );
 
     Spectrum spec(fft_size);
-    spec.UseLinearNormalisation(1, 20);
+    spec.UseLinearNormalisation(1, num_bars);
     float bar_data[num_bars];
 
     while (true) {
